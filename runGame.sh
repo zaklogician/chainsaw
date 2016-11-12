@@ -1,8 +1,19 @@
 #!/bin/bash
 
-javac *.java
-scalac HaliteBot.scala
-scalac MyBot.scala
-scalac RandomBot.scala
+# compile bots
+sbt compile
 
-./halite -d "30 30" "scala MyBot" "scala RandomBot"
+# clean game directory
+if [ -d "games" ]; then 
+  rm -r games
+fi
+mkdir games
+
+# copy bots to game directory
+cp target/scala-2.10/classes/* games/
+cp halite.exe games/
+
+# run game
+pushd games
+./halite -d "30 30" "scala MyBot" "scala MyBot"
+popd
