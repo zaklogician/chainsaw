@@ -5,7 +5,7 @@ import org.scalacheck.Gen.{oneOf, listOf, alphaStr, numChar}
 
 object TestSerializeRule extends Properties("Rule") {
   property("serialize") = Prop { 
-	val fname = "tmp.txt"
+	val fname = "tmp1"
 	val rule = Genetic.newRule
 
 	val oos = new java.io.ObjectOutputStream( new java.io.FileOutputStream(fname) )
@@ -22,7 +22,7 @@ object TestSerializeRule extends Properties("Rule") {
 
 	import scala.collection.JavaConversions._
 
-	val fname = "tmp2.txt"
+	val fname = "tmp2"
 	val rule1 = Genetic.newRule
     val rule2 = Genetic.newRule
     val rules: Array[Rule] = Array(rule1,rule2)
