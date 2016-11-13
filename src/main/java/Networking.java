@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.Scanner;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.nio.file.*;
+import java.nio.charset.*;
 
 public class Networking {
     public static final int SIZE_OF_INTEGER_PREFIX = 4;
@@ -11,7 +13,18 @@ public class Networking {
     private static int _width, _height;
     private static ArrayList< ArrayList<Integer> > _productions;
 
-    static BufferedWriter writer = Files.newBufferedWriter("./log.txt", Charset.forName("US-ASCII"));
+    private static BufferedWriter writer;
+
+    static {
+      try {
+        writer = Files.newBufferedWriter(Paths.get("./log.txt"), Charset.forName("US-ASCII"));
+      } catch (Exception e) { }
+    }
+
+    static void write(String msg) {
+      try { writer.write(msg, 0, msg.length()); writer.flush(); }
+      catch (Exception e) { }
+    }
 
     static void deserializeGameMapSize(String inputString) {
         String[] inputStringComponents = inputString.split(" ");
@@ -20,7 +33,7 @@ public class Networking {
         _height = Integer.parseInt(inputStringComponents[1]);
 	
         String msg = "H [gms] " + inputString;
-        writer.write(msg, 0, msg.length());
+        write(msg);
     }
 
 
@@ -39,15 +52,15 @@ public class Networking {
         }
 
         String msg = "H [prd] " + inputString;
-        writer.write(msg, 0, msg.length());
+        write(msg);
     }
 
     static String serializeMoveList(ArrayList<Move> moves) {
         StringBuilder builder = new StringBuilder();
         for(Move move : moves) builder.append(move.loc.x + " " + move.loc.y + " " + move.dir.ordinal() + " ");
 	
-        String msg = "B [mov] " + builder.toString;
-        writer.write(msg, 0, msg.length());
+        String msg = "B [mov] " + builder.toString();
+        write(msg);
         
         return builder.toString();
     }
@@ -84,7 +97,7 @@ public class Networking {
             }
         }
         String msg = "H [map] " + inputString;
-        writer.write(msg, 0, msg.length());
+        write(msg);
 
         return map;
     }
@@ -128,7 +141,6 @@ public class Networking {
     }
 
     static GameMap getFrame() {
-        writer.flush();
         return deserializeGameMap(getString());
     }
 
