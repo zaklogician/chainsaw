@@ -17,7 +17,7 @@ public class Networking {
 
     static {
       try {
-        writer = Files.newBufferedWriter(Paths.get("./log.txt"), Charset.forName("US-ASCII"));
+        writer = Files.newBufferedWriter(Paths.get("./log.tmp"), Charset.forName("US-ASCII"));
       } catch (Exception e) { }
     }
 

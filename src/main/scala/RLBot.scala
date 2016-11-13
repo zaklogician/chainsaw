@@ -167,7 +167,7 @@ object RLBot {
 	}
 	catch {
 	  case t: Throwable => {
-		val ps = new java.io.PrintStream( new java.io.FileOutputStream( "error.txt" ) )
+		val ps = new java.io.PrintStream( new java.io.FileOutputStream( "error.tmp" ) )
 		ps.println( t )
 		ps.close()
 	  }
