@@ -38,7 +38,8 @@ case class Pattern( i1: Desc,           i3: Desc
   }
 }
 
-case class Rule(pattern: Pattern, direction: Direction)
+@SerialVersionUID(0L)
+case class Rule(pattern: Pattern, direction: Direction) extends Serializable
 
 object Pattern {
   def safeLoc(gameMap: GameMap, x: Int, y: Int): Location = {
