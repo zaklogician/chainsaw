@@ -3,7 +3,7 @@ import org.scalacheck.Prop
 import org.scalacheck.Prop.BooleanOperators
 import org.scalacheck.Gen.{oneOf, listOf, alphaStr, numChar}
 
-object TestSerializeRule extends Properties("Rule") {
+object TestSerialize extends Properties("Rule") {
   property("serialize") = Prop { 
 	val fname = "test-serialize-1.tmp"
 	val rule = Genetic.newRule
@@ -18,7 +18,7 @@ object TestSerializeRule extends Properties("Rule") {
 	rule == rule2
   }
 
-  property("serialize for arrays") = Prop { 
+  property("serialize multiple") = Prop { 
 	val fname = "test-serialize-2.tmp"
 	val rule1 = Genetic.newRule
 	val rule2 = Genetic.newRule
