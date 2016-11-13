@@ -18,6 +18,6 @@ resolvers += Resolver.sonatypeRepo("public")
 libraryDependencies ++= Seq(
   //groupID % artifactID % revision
   "com.googlecode.aima-java" % "aima-core" % "0.11.1",
-
+  "burlap" % "burlap" % "2.1.7",
   "org.scalacheck" % "scalacheck_2.10" % "1.13.4" % "test"
 )
