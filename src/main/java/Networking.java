@@ -32,7 +32,7 @@ public class Networking {
         _width = Integer.parseInt(inputStringComponents[0]);
         _height = Integer.parseInt(inputStringComponents[1]);
 	
-        String msg = "H [gms] " + inputString;
+        String msg = "H [gms] " + inputString + "\n";
         write(msg);
     }
 
@@ -51,7 +51,7 @@ public class Networking {
             _productions.add(row);
         }
 
-        String msg = "H [prd] " + inputString;
+        String msg = "H [prd] " + inputString + "\n";
         write(msg);
     }
 
@@ -59,7 +59,7 @@ public class Networking {
         StringBuilder builder = new StringBuilder();
         for(Move move : moves) builder.append(move.loc.x + " " + move.loc.y + " " + move.dir.ordinal() + " ");
 	
-        String msg = "B [mov] " + builder.toString();
+        String msg = "B [mov] " + builder.toString() + "\n";
         write(msg);
         
         return builder.toString();
@@ -96,7 +96,7 @@ public class Networking {
                 map.contents.get(a).get(b).production = _productions.get(a).get(b);
             }
         }
-        String msg = "H [map] " + inputString;
+        String msg = "H [map] " + inputString + "\n";
         write(msg);
 
         return map;

@@ -15,5 +15,5 @@ cp halite.exe games/
 
 # run game
 pushd games
-./halite -d "30 30" "scala RLBot" "scala MyBot"
+./halite -d "30 30" "scala RLBot" "scala RLBot"
 popd
