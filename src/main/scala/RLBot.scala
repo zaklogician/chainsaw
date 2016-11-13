@@ -1,157 +1,182 @@
-import aima.core.agent._
-import aima.core.learning.reinforcement.PerceptStateReward
-import aima.core.learning.reinforcement.agent._
-import aima.core.probability.mdp.ActionsFunction
 
-///////////////////////////////////
-
-case class DirectionAction(direction: Direction) extends Action {
-  override def isNoOp: Boolean = direction == Direction.STILL
+trait Desc {
+  def matches(that: Desc) = this == that
+}
+case object EnemyWeaker extends Desc
+case object EnemyStronger extends Desc
+case object AllyWeaker extends Desc
+case object AllyStronger extends Desc
+case object DontCare extends Desc {
+  override def matches(that: Desc) = true
 }
 
-case class GetActions[State]() extends ActionsFunction[State,DirectionAction] {
-  override def actions(state: State): java.util.Set[DirectionAction] = {
-    import scala.collection.JavaConversions._
-    java.util.EnumSet.allOf(classOf[Direction]).map { DirectionAction }
-  }
-}
-
-///////////////////////////////////
-
-object AgentParams {
-  // http://aimacode.github.io/aima-java/aima3e/javadoc/aima-core/aima/core/learning/reinforcement/agent/QLearningAgent.html :
-  val Alpha = 0.2	// a fixed learning rate
-  val Gamma = 1.0	// discount to be used
-  val Ne = 5		// fixed parameter for internal use by QLearningAgent in the method f(u, n)
-  val Rplus = 200		// optimistic estimate of the best possible reward obtainable in any state
-}
-
-object Agent extends 
-  QLearningAgent[GameMap, DirectionAction]( 
-	GetActions[GameMap]()
-	, DirectionAction(Direction.STILL)
-	, AgentParams.Alpha, AgentParams.Gamma, AgentParams.Ne, AgentParams.Rplus )
-
-///////////////////////////////////
-
-object ConstReward {
-  def apply(s: Unit, r: Double): PerceptStateReward[Unit] = 
-    new PerceptStateReward[Unit] {
-      override def state: Unit = s
-      override def reward: Double = r
+object Desc {
+  def compare(site1: Site, site2: Site): Desc = {
+    if (site1.owner == site2.owner) {
+      if (site1.strength < site2.strength) AllyWeaker
+      else                                 AllyStronger
     }
-}
-
-object TerritoryReward {
-  def apply(gameMap: GameMap, myBotId: Int): PerceptStateReward[GameMap] = 
-    new PerceptStateReward[GameMap] {
-      override def state: GameMap = gameMap
-      override def reward: Double = {
-		var result = 0.0
-    	for ( x <- 0 to gameMap.width - 1; y <- 0 to gameMap.height - 1 )
-      	  if (gameMap.getSite(new Location(x, y)).owner == myBotId)
-			result += 1
-
-		result
-	  }
-    }
-}
-
-object StrengthReward {
-  def apply(gameMap: GameMap, myBotId: Int): PerceptStateReward[GameMap] = 
-    new PerceptStateReward[GameMap] {
-      override def state: GameMap = gameMap
-      override def reward: Double = {
-		var result = 0.0
-    	for ( x <- 0 to gameMap.width - 1; y <- 0 to gameMap.height - 1 ) {
-			val site = gameMap.getSite(new Location(x, y))
-      	  if (site.owner == myBotId)
-			result += site.strength
-		}
-
-		result
-	  }
-    }
-}
-
-object DeltaStrengthReward {
-  var oldGameMap: Option[GameMap] = None
-
-  def apply(gameMap: GameMap, myBotId: Int): PerceptStateReward[GameMap] = {
-    new PerceptStateReward[GameMap] {
-      override def state: GameMap = gameMap
-      override def reward: Double = {
-		var result: Double = 0.0
-    	for ( x <- 0 to gameMap.width - 1; y <- 0 to gameMap.height - 1 ) {
-          val loc: Location = new Location(x, y)
-	      val oldStrength: Option[Double] = for ( m <- oldGameMap ) yield {
-            val oldSite = m.getSite(loc)
-            if (oldSite.owner == myBotId) oldSite.strength else 0
-          }
-          val site: Site = gameMap.getSite(loc)
-      	  if (site.owner == myBotId) result = 1.0*site.strength - oldStrength.getOrElse(0.0)
-		}
-        oldGameMap = Some(gameMap)
-		result*0.001
-	  }
+    else {
+      if (site1.strength < site2.strength) EnemyWeaker
+      else                                 EnemyStronger
     }
   }
 }
 
+case class Pattern( i1: Desc,           i3: Desc
+                  , i4: Desc, i5: Desc, i6: Desc
+                  , i7: Desc, i8: Desc, i9: Desc
+                  ) {
+  def matches(that: Pattern): Boolean = {
+    (this.i1 matches that.i1) &&
+    (this.i3 matches that.i3) &&
+    (this.i4 matches that.i4) &&
+    (this.i5 matches that.i5) &&
+    (this.i6 matches that.i6) &&
+    (this.i7 matches that.i7) &&
+    (this.i8 matches that.i8)
+  }
+}
 
-object RandomReward {
-  def apply(gameMap: GameMap, myBotId: Int): PerceptStateReward[GameMap] = 
-    new PerceptStateReward[GameMap] {
-      override def state: GameMap = gameMap
-      override def reward: Double = 0.5-java.lang.Math.random()
-    }
-} 
-///////////////////////////////////
+case class Rule(pattern: Pattern, direction: Direction)
 
-object MoveLog extends java.io.PrintStream( new java.io.FileOutputStream( "movelog.txt" ) )
+object Pattern {
+  def safeLoc(gameMap: GameMap, x: Int, y: Int): Location = {
+    new Location((x + gameMap.width) % gameMap.width, (y + gameMap.height) % gameMap.height)
+  }
 
-class RLBot(id: Int, gameMap: GameMap) extends HaliteBot(id, gameMap) {
-  
-  override def takeTurn(turn: BigInt, gameMap: GameMap): MoveList = {
+  def southOf(gameMap: GameMap, loc: Location): Pattern = {
+    val self: Site = gameMap.getSite( safeLoc(gameMap,loc.x, loc.y)   )
+    val s1: Site = gameMap.getSite( safeLoc(gameMap,loc.x-1, loc.y)   )
+    val s3: Site = gameMap.getSite( safeLoc(gameMap,loc.x+1, loc.y)   ) 
+    val s4: Site = gameMap.getSite( safeLoc(gameMap,loc.x-1, loc.y-1) )
+    val s5: Site = gameMap.getSite( safeLoc(gameMap,loc.x,   loc.y-1) )
+    val s6: Site = gameMap.getSite( safeLoc(gameMap,loc.x+1, loc.y-1) )
+    val s7: Site = gameMap.getSite( safeLoc(gameMap,loc.x-1, loc.y-2) )
+    val s8: Site = gameMap.getSite( safeLoc(gameMap,loc.x,   loc.y-2) )
+    val s9: Site = gameMap.getSite( safeLoc(gameMap,loc.x+1, loc.y-2) )
+    Pattern( Desc.compare(self, s1), Desc.compare(self, s3)
+           , Desc.compare(self, s4), Desc.compare(self, s5), Desc.compare(self, s6)
+           , Desc.compare(self, s7), Desc.compare(self, s8), Desc.compare(self, s9)
+           )
+  }
 
+  def northOf(gameMap: GameMap, loc: Location): Pattern = {
+    val self: Site = gameMap.getSite( safeLoc(gameMap,loc.x, loc.y)   )
+    val s1: Site = gameMap.getSite( safeLoc(gameMap,loc.x+1, loc.y)   )
+    val s3: Site = gameMap.getSite( safeLoc(gameMap,loc.x-1, loc.y)   ) 
+    val s4: Site = gameMap.getSite( safeLoc(gameMap,loc.x+1, loc.y+1) )
+    val s5: Site = gameMap.getSite( safeLoc(gameMap,loc.x,   loc.y+1) )
+    val s6: Site = gameMap.getSite( safeLoc(gameMap,loc.x-1, loc.y+1) )
+    val s7: Site = gameMap.getSite( safeLoc(gameMap,loc.x+1, loc.y+2) )
+    val s8: Site = gameMap.getSite( safeLoc(gameMap,loc.x,   loc.y+2) )
+    val s9: Site = gameMap.getSite( safeLoc(gameMap,loc.x-1, loc.y+2) )
+    Pattern( Desc.compare(self, s1), Desc.compare(self, s3)
+           , Desc.compare(self, s4), Desc.compare(self, s5), Desc.compare(self, s6)
+           , Desc.compare(self, s7), Desc.compare(self, s8), Desc.compare(self, s9)
+           )
+  }
+
+  def eastOf(gameMap: GameMap, loc: Location): Pattern = {
+    val self: Site = gameMap.getSite( safeLoc(gameMap,loc.x, loc.y)   )
+    val s1: Site = gameMap.getSite( safeLoc(gameMap,loc.x, loc.y-1)   )
+    val s3: Site = gameMap.getSite( safeLoc(gameMap,loc.x, loc.y+1)   ) 
+    val s4: Site = gameMap.getSite( safeLoc(gameMap,loc.x-1, loc.y-1) )
+    val s5: Site = gameMap.getSite( safeLoc(gameMap,loc.x-1,   loc.y) )
+    val s6: Site = gameMap.getSite( safeLoc(gameMap,loc.x-1, loc.y+1) )
+    val s7: Site = gameMap.getSite( safeLoc(gameMap,loc.x-2, loc.y-1) )
+    val s8: Site = gameMap.getSite( safeLoc(gameMap,loc.x-2,   loc.y) )
+    val s9: Site = gameMap.getSite( safeLoc(gameMap,loc.x-2, loc.y+1) )
+    Pattern( Desc.compare(self, s1), Desc.compare(self, s3)
+           , Desc.compare(self, s4), Desc.compare(self, s5), Desc.compare(self, s6)
+           , Desc.compare(self, s7), Desc.compare(self, s8), Desc.compare(self, s9)
+           )
+  }
+
+  def westOf(gameMap: GameMap, loc: Location): Pattern = {
+    val self: Site = gameMap.getSite( safeLoc(gameMap,loc.x, loc.y)   )
+    val s1: Site = gameMap.getSite( safeLoc(gameMap,loc.x  , loc.y+1) )
+    val s3: Site = gameMap.getSite( safeLoc(gameMap,loc.x  , loc.y-1) ) 
+    val s4: Site = gameMap.getSite( safeLoc(gameMap,loc.x-1, loc.y+1) )
+    val s5: Site = gameMap.getSite( safeLoc(gameMap,loc.x-1, loc.y  ) )
+    val s6: Site = gameMap.getSite( safeLoc(gameMap,loc.x-1, loc.y-1) )
+    val s7: Site = gameMap.getSite( safeLoc(gameMap,loc.x-2, loc.y+1) )
+    val s8: Site = gameMap.getSite( safeLoc(gameMap,loc.x-2, loc.y  ) )
+    val s9: Site = gameMap.getSite( safeLoc(gameMap,loc.x-2, loc.y-1) )
+    Pattern( Desc.compare(self, s1), Desc.compare(self, s3)
+           , Desc.compare(self, s4), Desc.compare(self, s5), Desc.compare(self, s6)
+           , Desc.compare(self, s7), Desc.compare(self, s8), Desc.compare(self, s9)
+           )
+  }
+
+}
+
+/*****
+
+// calling some external process
+      val cmd = s"${javaBinary} -Xmx4g -Dscala.usejavacp=true -cp ${tmpDir}${File.pathSeparator}.${File.separator}deploy${File.separator}akkajam.jar $test -c true -s ${dataSeed} -i ${inputSize}"
+      println("Launching external process: " + cmd)
+
+      val testProgOutput = Process(cmd).lineStream
+*****/
+
+class Genetic(rng: java.util.Random) {
+  type Individual = List[Rule]
+
+  def crossover( a: Individual, b: Individual ): Individual = {
+    assert(a.length == b.length)
+    val xpoint = rng.nextInt(a.length)
+    val aPrefix = a.splitAt(xpoint)._1
+    val bSuffix = b.splitAt(xpoint)._2
+    aPrefix ++ bSuffix
+  }
+
+  def newDirection: Direction = {
+    val possible: List[Direction] = List(Direction.STILL, Direction.NORTH, Direction.EAST, Direction.WEST, Direction.SOUTH)
+    possible(rng.nextInt(possible.length))
+  }
+
+  def newDesc: Desc = {
+    val possible: List[Desc] = List(EnemyWeaker, EnemyStronger, AllyWeaker, AllyStronger)
+    possible(rng.nextInt(possible.length))
+  }
+
+  def newRule: Rule = {
+    val newPattern = Pattern( newDesc, newDesc, newDesc, newDesc, newDesc, newDesc, newDesc, newDesc )
+    Rule(newPattern, newDirection)
+  }
+
+  def mutation( a: Individual ): Individual = {
+    val mpoint = rng.nextInt(a.length)
+    a.updated(mpoint, newRule)
+  }
+}
+
+class RLBot(id: Int, gameMap:GameMap) extends HaliteBot(id, gameMap) {
+
+  val rules: List[Rule] = List()
+
+  override def takeTurn(turn:BigInt, gameMap:GameMap): MoveList = {
+    // Random moves
     val moves = new MoveList()
-    for ( x <- 0 to gameMap.width - 1; y <- 0 to gameMap.height - 1 ) {
-      val site: Site = gameMap.getSite(new Location(x, y))
-      if (site.owner == id) {
-        try {
-			
-			val out = new java.io.PrintStream( System.out )
-			val err = new java.io.PrintStream( System.err )
-			System.setOut( new java.io.PrintStream( new java.io.FileOutputStream( "out-redir.txt" ) ) ) // NUL:" )  ) )
-			System.setErr( new java.io.PrintStream( new java.io.FileOutputStream( "err-redir.txt" ) ) ) // NUL:" )  ) )
-        	
-            // val dir: Direction = Agent.execute(ConstReward(Unit, 1.0)).direction
-			// val dir: Direction = Agent.execute(DeltaStrengthReward(gameMap, id)).direction
-            val dir: Direction = Agent.execute(RandomReward(gameMap, id)).direction
-
-			System.setOut( out )
-			System.setErr( err )
-            
-            MoveLog.print(" loc: " + x + ", " + y + " dir: " + dir + "\n")
-
-	        moves.add(new Move(new Location(x, y), dir))
-
-		}
-		catch {
-			case t: Throwable => {
-			  val ps = new java.io.PrintStream( new java.io.FileOutputStream( "error.txt" ) )
-			  ps.print( t )
-			  ps.close()
-			}
-		}
-      }
+    for (x <- 0 to gameMap.height - 1; y <- 0 to gameMap.width - 1) {
+        val site: Site = gameMap.getSite(new Location(x, y))
+        if (site.owner == id) {
+          val loc: Location = new Location(x, y)
+          val extracted: List[Pattern] = List( Pattern.northOf(gameMap,loc)
+                                             , Pattern.southOf(gameMap,loc)
+                                             , Pattern.eastOf(gameMap,loc)
+                                             , Pattern.westOf(gameMap,loc)
+                                             )
+          val dir: Direction = 
+            rules.flatMap( r => if (extracted.exists(r.pattern matches _)) List(r.direction) else Nil ).headOption getOrElse (Direction.STILL)
+          moves.add(new Move(loc, dir))
+        }
     }
     moves
   }
 
 }
-
-///////////////////////////////////
 
 object RLBot {
 
@@ -164,5 +189,3 @@ object RLBot {
     HaliteBot.run(args, maker)
   }
 }
-
-// End ///////////////////////////////////////////////////////////////
