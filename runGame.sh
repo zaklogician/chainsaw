@@ -10,7 +10,7 @@ fi
 mkdir games
 
 # copy bots to game directory
-cp target/scala-2.10/classes/* games/
+cp -r target/scala-2.10/classes/* games/
 cp halite.exe games/
 
 # run game

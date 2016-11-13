@@ -13,7 +13,8 @@ object TestAgent extends Properties("Agent") {
   }
 
   property("execute outputs valid direction") = Prop.forAll { (r: Double) =>
-    println(Agent.execute(ConstReward(Unit, r)))
-    true
+//    println(Agent.execute(ConstReward(Unit, r)))
+//    true
+	  false
   }
 }
