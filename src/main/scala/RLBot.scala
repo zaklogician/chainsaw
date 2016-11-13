@@ -1,5 +1,5 @@
 
-trait Desc {
+sealed trait Desc {
   def matches(that: Desc) = this == that
 }
 case object EnemyWeaker extends Desc
@@ -112,50 +112,9 @@ object Pattern {
 
 }
 
-/*****
-
-// calling some external process
-      val cmd = s"${javaBinary} -Xmx4g -Dscala.usejavacp=true -cp ${tmpDir}${File.pathSeparator}.${File.separator}deploy${File.separator}akkajam.jar $test -c true -s ${dataSeed} -i ${inputSize}"
-      println("Launching external process: " + cmd)
-
-      val testProgOutput = Process(cmd).lineStream
-*****/
-
-class Genetic(rng: java.util.Random) {
-  type Individual = List[Rule]
-
-  def crossover( a: Individual, b: Individual ): Individual = {
-    assert(a.length == b.length)
-    val xpoint = rng.nextInt(a.length)
-    val aPrefix = a.splitAt(xpoint)._1
-    val bSuffix = b.splitAt(xpoint)._2
-    aPrefix ++ bSuffix
-  }
-
-  def newDirection: Direction = {
-    val possible: List[Direction] = List(Direction.STILL, Direction.NORTH, Direction.EAST, Direction.WEST, Direction.SOUTH)
-    possible(rng.nextInt(possible.length))
-  }
-
-  def newDesc: Desc = {
-    val possible: List[Desc] = List(EnemyWeaker, EnemyStronger, AllyWeaker, AllyStronger)
-    possible(rng.nextInt(possible.length))
-  }
-
-  def newRule: Rule = {
-    val newPattern = Pattern( newDesc, newDesc, newDesc, newDesc, newDesc, newDesc, newDesc, newDesc )
-    Rule(newPattern, newDirection)
-  }
-
-  def mutation( a: Individual ): Individual = {
-    val mpoint = rng.nextInt(a.length)
-    a.updated(mpoint, newRule)
-  }
-}
 
 class RLBot(id: Int, gameMap:GameMap) extends HaliteBot(id, gameMap) {
-
-  val rules: List[Rule] = List()
+  import RLBot._
 
   override def takeTurn(turn:BigInt, gameMap:GameMap): MoveList = {
     // Random moves
@@ -181,12 +140,37 @@ class RLBot(id: Int, gameMap:GameMap) extends HaliteBot(id, gameMap) {
 
 object RLBot {
 
-  def main(args:Array[String]):Unit = {
+  //var rules: List[Rule] = List()
+  import Direction._
+  var rules: List[Rule] = List(Rule(Pattern(EnemyWeaker,AllyStronger,EnemyWeaker,AllyWeaker,EnemyWeaker,AllyWeaker,AllyWeaker,EnemyWeaker),NORTH), Rule(Pattern(EnemyWeaker,EnemyWeaker,AllyStronger,EnemyStronger,EnemyWeaker,EnemyStronger,AllyWeaker,AllyStronger),SOUTH))
+
+  private def run(args:Array[String]):Unit = {
+
+	if(!args.isEmpty) {
+		val ois = new java.io.ObjectInputStream( new java.io.FileInputStream( args(0) ) )
+		val ruleArray: Array[Rule] = ois.readObject().asInstanceOf[Array[Rule]]
+		rules = ruleArray.toList
+		ois.close()
+	}
 
     val maker = new HaliteBotMaker() {
       override def makeBot(id:Int, gameMap:GameMap):HaliteBot = new RLBot(id, gameMap)
     }
 
     HaliteBot.run(args, maker)
+  }
+
+  def main(args:Array[String]):Unit = {
+
+	try {
+      run(args)
+	}
+	catch {
+	  case t: Throwable => {
+		val ps = new java.io.PrintStream( new java.io.FileOutputStream( "error.txt" ) )
+		ps.println( t )
+		ps.close()
+	  }
+	}
   }
 }

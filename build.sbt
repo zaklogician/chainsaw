@@ -4,7 +4,7 @@ lazy val root = (project in file(".")).
     name := "chainsaw",
     version := "0.1.0",
     scalaVersion := "2.10.4",
-    mainClass in Compile := Some("dpt.DPT")
+    mainClass in Compile := Some("Genetic")
   )
 
 // assemblyOutputPath in assembly := file("./deploy/chainsaw" + ".jar")
