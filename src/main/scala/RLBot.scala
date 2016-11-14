@@ -181,14 +181,17 @@ object RLBot {
   /////////////////////////////////
 
   def addConsoleLogging: Unit = LOGGER.addHandler( new ConsoleHandler() )
-  def addFileLogging(path: String): Unit = LOGGER.addHandler( new FileHandler(path) )
+  def addFileLogging(prefix: String): Unit = {
+	val dateStr = new java.text.SimpleDateFormat("yyyy-MM-dd hh-mm-ss").format( new java.util.Date() )
+	LOGGER.addHandler( new FileHandler( s"${prefix}${dateStr}-${System.currentTimeMillis}.txt" ) )
+  }
 
   /////////////////////////////////
 
   def main(args:Array[String]):Unit = {
 
 	try {
-	  addFileLogging( "RLBot-log.txt" )
+	  addFileLogging( "RLBot-log-" )
       run(args)
 	}
 	catch {
