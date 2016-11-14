@@ -1,3 +1,6 @@
+import java.util.logging._
+
+///////////////////////////////////
 
 sealed trait Desc {
   def matches(that: Desc) = this == that
@@ -23,6 +26,8 @@ object Desc {
   }
 }
 
+///////////////////////////////////
+
 case class Pattern( i1: Desc,           i3: Desc
                   , i4: Desc, i5: Desc, i6: Desc
                   , i7: Desc, i8: Desc, i9: Desc
@@ -38,8 +43,7 @@ case class Pattern( i1: Desc,           i3: Desc
   }
 }
 
-@SerialVersionUID(0L)
-case class Rule(pattern: Pattern, direction: Direction) extends Serializable
+///////////////////////////////////
 
 object Pattern {
   def safeLoc(gameMap: GameMap, x: Int, y: Int): Location = {
@@ -112,6 +116,12 @@ object Pattern {
 
 }
 
+///////////////////////////////////
+
+@SerialVersionUID(0L)
+case class Rule(pattern: Pattern, direction: Direction) extends Serializable
+
+///////////////////////////////////
 
 class RLBot(id: Int, gameMap:GameMap) extends HaliteBot(id, gameMap) {
   import RLBot._
@@ -138,11 +148,19 @@ class RLBot(id: Int, gameMap:GameMap) extends HaliteBot(id, gameMap) {
 
 }
 
+///////////////////////////////////
+
 object RLBot {
+
+  private val LOGGER = Logger.getLogger( classOf[RLBot].getName )
+
+  /////////////////////////////////
 
   //var rules: List[Rule] = List()
   import Direction._
   var rules: List[Rule] = List(Rule(Pattern(EnemyWeaker,AllyStronger,EnemyWeaker,AllyWeaker,EnemyWeaker,AllyWeaker,AllyWeaker,EnemyWeaker),NORTH), Rule(Pattern(EnemyWeaker,EnemyWeaker,AllyStronger,EnemyStronger,EnemyWeaker,EnemyStronger,AllyWeaker,AllyStronger),SOUTH))
+
+  /////////////////////////////////
 
   private def run(args:Array[String]):Unit = {
 
@@ -160,17 +178,28 @@ object RLBot {
     HaliteBot.run(args, maker)
   }
 
+  /////////////////////////////////
+
+  def addConsoleLogging: Unit = LOGGER.addHandler( new ConsoleHandler() )
+  def addFileLogging(path: String): Unit = LOGGER.addHandler( new FileHandler(path) )
+
+  /////////////////////////////////
+
   def main(args:Array[String]):Unit = {
 
 	try {
+	  addFileLogging( "RLBot-log.txt" )
       run(args)
 	}
 	catch {
 	  case t: Throwable => {
-		val ps = new java.io.PrintStream( new java.io.FileOutputStream( "error.tmp" ) )
-		ps.println( t )
-		ps.close()
+		LOGGER.log(Level.SEVERE, "Caught Throwable in RLBOT.main", t)
+		// val ps = new java.io.PrintStream( new java.io.FileOutputStream( "error.tmp" ) )
+		// ps.println( t )
+		// ps.close()
 	  }
 	}
   }
 }
+
+// End ///////////////////////////////////////////////////////////////
