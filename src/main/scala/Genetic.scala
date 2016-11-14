@@ -1,9 +1,14 @@
 object Genetic {
+
   val PopulationSize = 10
   val NumberOfRules = 2
   val TournamentSize = 4
   val Iterations = 10
+  val HaliteGridSize = 10
+
   val rng: java.util.Random = new java.util.Random(0xDEAFBABE)
+
+  /////////////////////////////////
 
   type Individual = List[Rule]
   val fitness = scala.collection.mutable.Map.empty[Individual,Int]
@@ -36,6 +41,8 @@ object Genetic {
     a.updated(mpoint, newRule)
   }
 
+  /////////////////////////////////
+
   def winnerOf(i1: Individual, i2: Individual): Individual = {
     val file1 = "i1.bot"
     val file2 = "i2.bot"
@@ -51,9 +58,10 @@ object Genetic {
 	  oos.close()
     }
     
-    val cmd = s"""games/halite -d "30 30" "scala RLBot $file1" "scala RLBot $file2" """
+	val cmd = s"""games/halite -d "$HaliteGridSize $HaliteGridSize" "scala RLBot $file1" "scala RLBot $file2" """
     println("   Running " + cmd)
-    val testProgOutput = scala.sys.process.Process(cmd).lines.toList
+    // val testProgOutput = scala.sys.process.Process(cmd).lines.toList
+	val testProgOutput = sys.process.Process(cmd, new java.io.File("./games")).lines.toList
     val result = if( testProgOutput.contains("Player #1, ScalaBot, came in rank #1!") ) i1 else i2
     fitness.update(result, fitness.getOrElse(result, 0) + 1)
     result
@@ -67,6 +75,8 @@ object Genetic {
        winnerOf(champion,contender)
     }
   }
+
+  /////////////////////////////////
 
   def initial: List[Individual] = for( _ <- ( 1 to PopulationSize ).toList ) yield { for( j <- ( 1 to NumberOfRules ).toList ) yield newRule }
 
