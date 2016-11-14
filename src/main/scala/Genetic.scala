@@ -59,7 +59,7 @@ object Genetic {
     }
     
 	val cmd = s"""games/halite -d "$HaliteGridSize $HaliteGridSize" "scala RLBot $file1" "scala RLBot $file2" """
-    println("   Running " + cmd)
+    // println("   Running " + cmd)
     // val testProgOutput = scala.sys.process.Process(cmd).lines.toList
 	val testProgOutput = sys.process.Process(cmd, new java.io.File("./games")).lines.toList
     val result = if( testProgOutput.contains("Player #1, ScalaBot, came in rank #1!") ) i1 else i2
@@ -71,7 +71,7 @@ object Genetic {
     println("  Starting tournament")
     val tournament = population.sortBy(x => fitness.getOrElseUpdate(x,0)).take(TournamentSize)
     tournament.reduce { (champion,contender) =>
-       println("   Running match " + (champion, contender))
+       // println("   Running match " + (champion, contender))
        winnerOf(champion,contender)
     }
   }
@@ -81,12 +81,12 @@ object Genetic {
   def initial: List[Individual] = for( _ <- ( 1 to PopulationSize ).toList ) yield { for( j <- ( 1 to NumberOfRules ).toList ) yield newRule }
 
   // main GA loop
-  def galoop: Individual = {
+  def galoop: (Individual,Int) = {
     println("Starting GA loop")
     var population: List[Individual] = initial
     var iter = 0;
     while(iter < Iterations) {
-      println("Iteration " + iter)
+      println( s"Iteration: ${iter+1} of $Iterations" )
       val newPopulation = (1 to population.length/2) flatMap { i =>
         val parent1 = tournamentSelect(population)
         val parent2 = tournamentSelect(population)
@@ -94,12 +94,15 @@ object Genetic {
       }
       iter = iter + 1
     }
-    fitness.toList.head._1
+    fitness.toList.head
   }
 
   def main(args: Array[String]): Unit = {
+	val startTime = System.currentTimeMillis()
     val best = galoop
+	val endTime = System.currentTimeMillis()
     println(best)
+	println( s"elapsed: ${(endTime-startTime)/1000.0}" )
   }
 
 }
