@@ -19,4 +19,6 @@ object Generators {
   
   def rule: Gen[Rule] = for { p <- pattern; d <- direction } yield Rule(p,d)
 
+  def individual: Gen[List[Rule]] = Gen.listOf(rule).suchThat( _.length > 1 )
+
 }
