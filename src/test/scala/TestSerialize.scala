@@ -7,28 +7,23 @@ import Generators._
 object TestSerialize extends Properties("Serialize") {
   property("rules") = Prop.forAll(rule) { original =>
 	val baos = new java.io.ByteArrayOutputStream();
+	Serialize(baos, original)
 
-	val oos = new java.io.ObjectOutputStream( baos )
-	oos.writeObject( original )
-	oos.close()
-        
-	val ois = new java.io.ObjectInputStream( new java.io.ByteArrayInputStream(baos.toByteArray) )
-	val clone = ois.readObject().asInstanceOf[Rule]
-	ois.close()
+        val bais = new java.io.ByteArrayInputStream(baos.toByteArray)
+	val clone = Deserialize[Rule](bais)
+
 	original == clone
   }
 
   property("individuals") = Prop.forAll(listOf(rule)) { original =>
 	val baos = new java.io.ByteArrayOutputStream();
 
-	val oos = new java.io.ObjectOutputStream( baos )
-	oos.writeObject( original.toArray )
-	oos.close()
+	Serialize(baos, original)
         
-	val ois = new java.io.ObjectInputStream( new java.io.ByteArrayInputStream(baos.toByteArray) )
-	val clone = ois.readObject().asInstanceOf[Array[Rule]]
-	ois.close()
-	original.toList == clone.toList
+        val bais = new java.io.ByteArrayInputStream(baos.toByteArray)
+	val clone = Deserialize[List[Rule]](bais)
+
+	original == clone
   }
 
 }
