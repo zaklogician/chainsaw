@@ -45,10 +45,7 @@ object RLBot {
   private def run(args:Array[String]):Unit = {
 
 	if(!args.isEmpty) {
-		val ois = new java.io.ObjectInputStream( new java.io.FileInputStream( args(0) ) )
-		val ruleArray: Array[Rule] = ois.readObject().asInstanceOf[Array[Rule]]
-		rules = ruleArray.toList
-		ois.close()
+		rules = Deserialize[ List[Rule] ](new java.io.FileInputStream( args(0) ))
 	}
 
     val maker = new HaliteBotMaker() {

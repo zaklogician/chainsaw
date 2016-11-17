@@ -11,17 +11,8 @@ object Main extends GeneticAlgorithm {
     val file1: String = "i1.bot"
     val file2: String = "i2.bot"
     
-    {
-      val oos = new java.io.ObjectOutputStream( new java.io.FileOutputStream("games/"+file1) )
-      oos.writeObject( i1.toArray )
-      oos.close()
-    }
-    
-    {
-      val oos = new java.io.ObjectOutputStream( new java.io.FileOutputStream("games/"+file2) )
-      oos.writeObject( i2.toArray )
-      oos.close()
-    }
+    Serialize(new java.io.FileOutputStream("games/"+file1), i1)
+    Serialize(new java.io.FileOutputStream("games/"+file2), i2)
     
     val cmd = 
       s"""./halite -d "$HaliteGridSize $HaliteGridSize" "scala RLBot $file1" "scala RLBot $file2" """
