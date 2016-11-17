@@ -61,7 +61,7 @@ trait GeneticAlgorithm {
   }
 
   def tournamentSelect(population: List[Individual]): Individual = {
-    println("  Starting tournament")
+    // println("  Starting tournament")
     val tournament = population.sortBy(x => fitness.getOrElseUpdate(x,0)).take(TournamentSize)
     tournament.reduce { (champion,contender) =>
        winnerOf(champion,contender)
@@ -74,9 +74,11 @@ trait GeneticAlgorithm {
     rng.nextRule(RuleSize)
 
   def performIteration(population: List[Individual]): List[Individual] = {
+    val progress = new ProgressDisplay( population.length/2 )
     (1 to population.length/2).toList flatMap { i =>
       val parent1 = tournamentSelect(population)
       val parent2 = tournamentSelect(population)
+	  progress.increment()
       List( mutate(crossover(parent1,parent2)), mutate(crossover(parent2,parent1)) )
     }
   }
