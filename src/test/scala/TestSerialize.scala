@@ -2,37 +2,33 @@ import org.scalacheck.Properties
 import org.scalacheck.Prop
 import org.scalacheck.Prop.BooleanOperators
 import org.scalacheck.Gen.{oneOf, listOf, alphaStr, numChar}
+import Generators._
 
-object TestSerialize extends Properties("Rule") {
-  property("serialize") = Prop { 
-	val fname = "test-serialize-1.tmp"
-	val rule = Genetic.newRule
+object TestSerialize extends Properties("Serialize") {
+  property("rules") = Prop.forAll(rule) { original =>
+	val baos = new java.io.ByteArrayOutputStream();
 
-	val oos = new java.io.ObjectOutputStream( new java.io.FileOutputStream(fname) )
-	oos.writeObject( rule )
+	val oos = new java.io.ObjectOutputStream( baos )
+	oos.writeObject( original )
 	oos.close()
-
-	val ois = new java.io.ObjectInputStream( new java.io.FileInputStream(fname) )
-	val rule2 = ois.readObject().asInstanceOf[Rule]
+        
+	val ois = new java.io.ObjectInputStream( new java.io.ByteArrayInputStream(baos.toByteArray) )
+	val clone = ois.readObject().asInstanceOf[Rule]
 	ois.close()
-	rule == rule2
+	original == clone
   }
 
-  property("serialize multiple") = Prop { 
-	val fname = "test-serialize-2.tmp"
-	val rule1 = Genetic.newRule
-	val rule2 = Genetic.newRule
-	val rules: Array[Rule] = Array(rule1,rule2)
+  property("individuals") = Prop.forAll(listOf(rule)) { original =>
+	val baos = new java.io.ByteArrayOutputStream();
 
-	val oos = new java.io.ObjectOutputStream( new java.io.FileOutputStream(fname) )
-	oos.writeObject( rules )
+	val oos = new java.io.ObjectOutputStream( baos )
+	oos.writeObject( original.toArray )
 	oos.close()
-
-	val ois = new java.io.ObjectInputStream( new java.io.FileInputStream(fname) )
-	val rules2 = ois.readObject().asInstanceOf[Array[Rule]]
+        
+	val ois = new java.io.ObjectInputStream( new java.io.ByteArrayInputStream(baos.toByteArray) )
+	val clone = ois.readObject().asInstanceOf[Array[Rule]]
 	ois.close()
-
-	rules.toList == rules2.toList
+	original.toList == clone.toList
   }
 
 }

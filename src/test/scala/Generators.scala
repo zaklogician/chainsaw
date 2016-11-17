@@ -6,19 +6,34 @@ import org.scalacheck.Gen.{oneOf, listOf, alphaStr, numChar}
 
 object Generators {
 
-  def desc: Gen[Desc] = Gen.oneOf(EnemyWeaker, EnemyStronger, AllyWeaker, AllyStronger, DontCare)
+  private val directions = Direction.values.toList
 
-  def pattern: Gen[Pattern] = for
-    { i1 <- desc;             i3 <- desc
-    ; i4 <- desc; i5 <- desc; i6 <- desc 
-    ; i7 <- desc; i8 <- desc; i9 <- desc  
-    } yield Pattern(i1,i3,i4,i5,i6,i7,i8,i9)
-  
-  def direction: Gen[Direction] = 
-    Gen.oneOf(Direction.STILL, Direction.NORTH, Direction.EAST, Direction.SOUTH, Direction.WEST)
+  def direction: Gen[Direction] = Gen.oneOf(directions)
+  def comparison: Gen[Comparison] = Gen.oneOf(
+    IsStrongerEnemy,
+    IsStrongerAlly,
+    IsWeakerEnemy,
+    IsWeakerAlly,
+    IsMoreProductive,
+    IsLessProductive,
+    DontCare
+  ) 
+
+  def pattern: Gen[Pattern] = for {
+    cs <- Gen.listOf(comparison)
+  } yield Pattern(cs)
   
   def rule: Gen[Rule] = for { p <- pattern; d <- direction } yield Rule(p,d)
 
   def individual: Gen[List[Rule]] = Gen.listOf(rule).suchThat( _.length > 1 )
 
+  def site: Gen[Site] = for {
+    gowner <- Gen.choose[Int](0,3)
+    gstrength <- Gen.choose[Int](0,255)
+    gproduction <- Gen.choose[Int](1,10)
+  } yield new Site {
+    owner = gowner
+    strength = gstrength
+    production = gproduction
+  }
 }
