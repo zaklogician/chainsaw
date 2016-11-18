@@ -71,6 +71,28 @@ trait GeneticAlgorithm {
 
   /////////////////////////////////
 
+  def mean(xs: Seq[Int]): Double = {
+	require( !xs.isEmpty ) 
+	xs.sum / xs.length
+  }
+
+  def variance(xs: Seq[Int]): Double = {
+	require( !xs.isEmpty ) 
+	val d = xs.sum - mean(xs)
+	( d * d ) / (xs.length - 1)
+  }
+
+  def median(x: Seq[Int]): Double = {
+	val xs = x.sorted
+	val mid = xs.length/2
+	if( xs.length % 2 == 0 )
+	  (xs(mid) + xs(mid-1))/2.0
+	else
+      xs(mid)
+  }
+
+  /////////////////////////////////
+
   // main GA loop
   def galoop: (Individual,Int) = {
     println("Starting GA loop")
@@ -79,6 +101,10 @@ trait GeneticAlgorithm {
     while(iter < Iterations) {
       println( s"Iteration: ${iter+1} of $Iterations" )
       population = performIteration(population)
+
+	  val fv = fitness_.values.toList
+	  println( s"fitness mean: ${mean(fv)}, var: ${variance(fv)}, median: ${median(fv)}, min: ${fv.min}, max: ${fv.max}" )
+
       iter = iter + 1
     }
     fitness_.toList.maxBy { _._2 }
@@ -89,13 +115,13 @@ trait GeneticAlgorithm {
 
 object Main extends GeneticAlgorithm {
 
-  override val PopulationSize = 10
-  override val EliteRatio = 0.4
+  override val PopulationSize = 30
+  override val EliteRatio = 0.8
 
-  override val NumberOfRules = 2
+  override val NumberOfRules = 10
   override val RuleSize = 1
   override val TournamentSize = 4
-  override val Iterations = 10
+  override val Iterations = 20
   override val HaliteGridSize = 10
   override val rng: RandomGen = new JavaRandomGen
 
