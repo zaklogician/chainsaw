@@ -94,7 +94,7 @@ trait GeneticAlgorithm {
   /////////////////////////////////
 
   // main GA loop
-  def galoop: (Individual,Int) = {
+  def galoop: Map[Individual,Int] = {
     println("Starting GA loop")
     var population: List[Individual] = initial
     var iter = 0;
@@ -107,7 +107,8 @@ trait GeneticAlgorithm {
 
       iter = iter + 1
     }
-    fitness_.toList.maxBy { _._2 }
+    // fitness_.toList.maxBy { _._2 }
+	fitness_.toMap
   }
 }
 
@@ -115,13 +116,13 @@ trait GeneticAlgorithm {
 
 object Main extends GeneticAlgorithm {
 
-  override val PopulationSize = 30
-  override val EliteRatio = 0.8
+  override val PopulationSize = 10
+  override val EliteRatio = 0.4
 
   override val NumberOfRules = 10
   override val RuleSize = 1
   override val TournamentSize = 4
-  override val Iterations = 20
+  override val Iterations = 10
   override val HaliteGridSize = 10
   override val rng: RandomGen = new JavaRandomGen
 
@@ -146,8 +147,13 @@ object Main extends GeneticAlgorithm {
 
   def main(args: Array[String]): Unit = {
     val startTime = System.currentTimeMillis()
-    val best = galoop
+    val finalPopulation = galoop
     val endTime = System.currentTimeMillis()
+
+	// most recent .hlt file is between best two individuals
+	val sortedPopulation = finalPopulation.toList.sortBy { - _._2 }
+	winnerOf(sortedPopulation.head._1, sortedPopulation.tail.head._1)
+	val best = sortedPopulation.head
     println(best)
     println( s"elapsed: ${(endTime-startTime)/1000.0}" )
   }
