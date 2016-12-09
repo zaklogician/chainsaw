@@ -40,11 +40,15 @@ trait GeneticAlgorithm {
   }
 
   def tournamentSelect(population: List[Individual]): Individual = {
+    assert( TournamentSize >= 2 )
     // println("  Starting tournament")
     val tournament = population.sortBy { -fitness(_) }.take(TournamentSize)
-    tournament.reduce { (champion,contender) =>
-       winnerOf(champion,contender)
-    }
+    // tournament.reduce { (champion,contender) => winnerOf(champion,contender) }
+
+	var best = tournament( rng.nextInt( tournament.length ) )
+    for( _ <- 2 until TournamentSize )
+	  best = winnerOf(best,tournament(rng.nextInt( tournament.length )))
+	best
   }
 
   /////////////////////////////////

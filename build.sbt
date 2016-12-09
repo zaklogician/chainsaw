@@ -17,5 +17,6 @@ resolvers += Resolver.sonatypeRepo("public")
 
 libraryDependencies ++= Seq(
   //groupID % artifactID % revision
-  "org.scalacheck" % "scalacheck_2.10" % "1.13.4" % "test"
+  // "org.scalacheck" % "scalacheck_2.10" % "1.13.4" % "test"
+  "com.medallia.word2vec" % "Word2VecJava" % "0.10.3"
 )
